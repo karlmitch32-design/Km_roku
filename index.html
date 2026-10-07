@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KM Remote</title>
+<style>
+  :root {
+    --bg: #07070a;
+    --orb: #12121a;
+    --btn: #1e1e28;
+    --btn-glow: rgba(120, 80, 255, 0.35);
+    --accent: #8b5cf6;
+    --accent2: #a78bfa;
+    --text: #f0eeff;
+    --muted: #7a7590;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    background: radial-gradient(ellipse at center, #12121c 0%, #07070a 70%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* Setup screen */
+  #setup {
+    position: absolute;
+    inset: 0;
+    background: rgba(7,7,10,0.96);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    z-index: 100;
+    padding: 24px;
+  }
+  #setup.hidden { display: none; }
+  .logo-mark {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #8b5cf6, #4c1d95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -1px;
+    box-shadow: 0 0 40px rgba(139,92,246,0.5);
+    margin-bottom: 4px;
+  }
+  #setup h1 { font-size: 24px; font-weight: 700; letter-spacing: 1px; }
+  #setup p { color: var(--muted); font-size: 14px; text-align: center; max-width: 260px; line-height: 1.45; }
+  #ip-input {
+    width: 100%;
+    max-width: 250px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid #2a2a38;
+    background: #101018;
+    color: #fff;
+    font-size: 16px;
+    text-align: center;
+    outline: none;
+  }
+  #connect-btn {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: #fff;
+    border: none;
+    padding: 14px 36px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+  }
+  #status { font-size: 13px; color: var(--muted); min-height: 20px; }
+  #status.ok { color: #4ade80; }
+  #status.err { color: #f87171; }
+
+  /* ORB REMOTE */
+  .orb {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #1e1e2a, #0e0e14 70%);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04),
+      0 25px 60px rgba(0,0,0,0.7),
+      inset 0 2px 20px rgba(255,255,255,0.04),
+      0 0 80px rgba(139,92,246,0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 20px;
+  }
+  .orb-title {
+    position: absolute;
+    top: 22px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--muted);
+  }
+
+  .btn {
+    background: var(--btn);
+    border: none;
+    border-radius: 50%;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s, transform 0.08s, box-shadow 0.12s;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.45);
+  }
+  .btn:active {
+    background: #2c2c3a;
+    transform: scale(0.9);
+    box-shadow: 0 0 16px var(--btn-glow);
+  }
+  .btn.sm { width: 42px; height: 42px; font-size: 13px; }
+  .btn.md { width: 48px; height: 48px; }
+  .btn.ok {
+    width: 62px;
+    height: 62px;
+    background: linear-gradient(145deg, #9b6dff, #6d28d9);
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 4px 18px rgba(139,92,246,0.45);
+  }
+  .btn.power { color: #f87171; background: #2a1515; }
+
+  /* Top row inside orb */
+  .top-row {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 10px;
+  }
+
+  /* D-Pad */
+  .dpad {
+    display: grid;
+    grid-template-columns: 48px 62px 48px;
+    grid-template-rows: 48px 62px 48px;
+    gap: 4px;
+    place-items: center;
+  }
+  .dpad .up { grid-column: 2; grid-row: 1; }
+  .dpad .left { grid-column: 1; grid-row: 2; }
+  .dpad .ok { grid-column: 2; grid-row: 2; }
+  .dpad .right { grid-column: 3; grid-row: 2; }
+  .dpad .down { grid-column: 2; grid-row: 3; }
+
+  /* Bottom controls */
+  .bottom-row {
+    display: flex;
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .vol-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .vol-label {
+    font-size: 10px;
+    color: var(--muted);
+    width: 28px;
+    text-align: center;
+  }
+
+  .change-ip {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: transparent;
+    border: 1px solid #2a2a38;
+    color: #777;
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .brand {
+    position: absolute;
+    bottom: 18px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #444;
+  }
+</style>
+</head>
+<body>
+  <button class="change-ip" id="change-ip" style="display:none">Change IP</button>
+
+  <div id="setup">
+    <div class="logo-mark">KM</div>
+    <h1>KM Remote</h1>
+    <p>Enter your Roku’s IP address.<br>Find it on the Roku under<br><strong>Settings → Network → About</strong></p>
+    <input type="text" id="ip-input" placeholder="e.g. 192.168.1.42" inputmode="decimal" autocomplete="off">
+    <button id="connect-btn">Connect</button>
+    <div id="status"></div>
+  </div>
+
+  <div class="orb" id="remote" style="display:none">
+    <div class="orb-title">KM REMOTE</div>
+
+    <div class="top-row">
+      <button class="btn sm power" data-key="PowerOff" title="Power">⏻</button>
+      <button class="btn sm" data-key="Back" title="Back">↩</button>
+      <button class="btn sm" data-key="Home" title="Home">⌂</button>
+    </div>
+
+    <div class="dpad">
+      <button class="btn md up" data-key="Up">▲</button>
+      <button class="btn md left" data-key="Left">◀</button>
+      <button class="btn ok" data-key="Select">OK</button>
+      <button class="btn md right" data-key="Right">▶</button>
+      <button class="btn md down" data-key="Down">▼</button>
+    </div>
+
+    <div class="bottom-row">
+      <button class="btn sm" data-key="InstantReplay" title="Replay">↺</button>
+      <button class="btn sm" data-key="Play" title="Play/Pause">⏯</button>
+      <button class="btn sm" data-key="Info" title="Options">★</button>
+    </div>
+
+    <div class="vol-row">
+      <span class="vol-label">VOL</span>
+      <button class="btn sm" data-key="VolumeDown">−</button>
+      <button class="btn sm" data-key="VolumeMute">🔇</button>
+      <button class="btn sm" data-key="VolumeUp">+</button>
+    </div>
+  </div>
+
+  <div class="brand" id="brand" style="display:none">KM DESIGN</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const setup = document.getElementById('setup');
+  const remote = document.getElementById('remote');
+  const brand = document.getElementById('brand');
+  const ipInput = document.getElementById('ip-input');
+  const connectBtn = document.getElementById('connect-btn');
+  const status = document.getElementById('status');
+  const changeIpBtn = document.getElementById('change-ip');
+
+  let rokuIp = localStorage.getItem('kmRokuIp') || '';
+
+  if (rokuIp) {
+    ipInput.value = rokuIp;
+    tryConnect(rokuIp);
+  }
+
+  connectBtn.addEventListener('click', () => {
+    const ip = ipInput.value.trim();
+    if (!ip) {
+      status.textContent = 'Please enter an IP address';
+      status.className = 'err';
+      return;
+    }
+    tryConnect(ip);
+  });
+
+  ipInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') connectBtn.click();
+  });
+
+  changeIpBtn.addEventListener('click', () => {
+    setup.classList.remove('hidden');
+    remote.style.display = 'none';
+    brand.style.display = 'none';
+    changeIpBtn.style.display = 'none';
+  });
+
+  async function tryConnect(ip) {
+    status.textContent = 'Connecting…';
+    status.className = '';
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      await fetch(`http://${ip}:8060/query/device-info`, {
+        signal: controller.signal,
+        mode: 'no-cors'
+      });
+      clearTimeout(timeout);
+      rokuIp = ip;
+      localStorage.setItem('kmRokuIp', ip);
+      status.textContent = 'Connected';
+      status.className = 'ok';
+      setTimeout(showRemote, 350);
+    } catch (err) {
+      rokuIp = ip;
+      localStorage.setItem('kmRokuIp', ip);
+      status.textContent = 'IP saved – use on same Wi-Fi';
+      status.className = 'ok';
+      setTimeout(showRemote, 500);
+    }
+  }
+
+  function showRemote() {
+    setup.classList.add('hidden');
+    remote.style.display = 'flex';
+    brand.style.display = 'block';
+    changeIpBtn.style.display = 'block';
+  }
+
+  function sendKey(key) {
+    if (!rokuIp) return;
+    fetch(`http://${rokuIp}:8060/keypress/${key}`, { method: 'POST', mode: 'no-cors' })
+      .catch(() => {});
+  }
+
+  document.querySelectorAll('[data-key]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sendKey(btn.getAttribute('data-key'));
+    });
+  });
+})();
+</script>
+</body>
+</html>
